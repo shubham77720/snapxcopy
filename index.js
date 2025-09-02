@@ -24,7 +24,7 @@ app.use("/posts", require("./routes/posts"));
 // Static folder for uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(cors({
-  origin: ["http://localhost:3000", "https://snapcopy.netlify.app"], // allowed origins
+  origin: ["http://localhost:3000", "https://snapcopy.netlify.app","https://snapxcopy.onrender.com"], // allowed origins
   credentials: true
 }));
 app.use("/status/files", express.static(path.join(__dirname, "uploads/status")));
@@ -54,7 +54,7 @@ const connectDB = require('./config/db');
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://snapcopy.netlify.app"],
+    origin: ["http://localhost:3000", "https://snapcopy.netlify.app","https://snapxcopy.onrender.com"],
     methods: ["GET", "POST"]
   }
 });
