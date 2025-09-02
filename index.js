@@ -23,8 +23,23 @@ app.use("/posts", require("./routes/posts"));
 // app.use("/song", require("./routes/songroute"));
 // Static folder for uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+const allowedOrigins = [
+  "http://localhost:3000",          // React frontend (local)
+  "https://snapcopy.netlify.app",   // React frontend (Netlify hosted)
+  "http://10.0.2.2:3000",           // Android emulator (maps to localhost)
+  "http://192.168.1.100:3000"       // Your local network IP (real device)
+];
+
+// ✅ CORS for REST APIs
 app.use(cors({
-  origin: ["http://localhost:3000", "https://snapcopy.netlify.app","https://snapxcopy.onrender.com"], // allowed origins
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 app.use("/status/files", express.static(path.join(__dirname, "uploads/status")));
@@ -54,7 +69,7 @@ const connectDB = require('./config/db');
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://snapcopy.netlify.app","https://snapxcopy.onrender.com"],
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
