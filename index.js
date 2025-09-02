@@ -23,7 +23,10 @@ app.use("/posts", require("./routes/posts"));
 // app.use("/song", require("./routes/songroute"));
 // Static folder for uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use(cors({
+  origin: ["http://localhost:3000", "https://snapcopy.netlify.app"], // allowed origins
+  credentials: true
+}));
 app.use("/status/files", express.static(path.join(__dirname, "uploads/status")));
 // ===================== FILE UPLOAD ROUTE =====================
 const storage = multer.diskStorage({
@@ -49,7 +52,12 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:3000", "https://snapcopy.netlify.app"],
+    methods: ["GET", "POST"]
+  }
+});
 
 require('./socket/chat')(io);
 connectDB();
