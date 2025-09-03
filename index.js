@@ -1,48 +1,50 @@
-const express = require('express');
-const http = require('http');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const dotenv = require("dotenv");
 const path = require("path");
 const multer = require("multer");
-const JSZip = require('jszip');
-const axios = require('axios');
-const fs = require('fs');
+const fs = require("fs");
+const axios = require("axios");
+const JSZip = require("jszip");
+
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
- app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/user'));
-app.use('/api/chat', require('./routes/messages'));
-app.use('/status', require('./routes/status'));
+// ✅ Global CORS config (API + mobile apps)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://snapcopy.netlify.app", // your frontend
+      "capacitor://localhost", // Capacitor mobile apps
+      "ionic://localhost",     // Ionic apps
+      "http://localhost",      // generic localhost
+      "https://*",             // (optional) allow any https domain
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ===================== ROUTES =====================
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/users", require("./routes/user"));
+app.use("/api/chat", require("./routes/messages"));
+app.use("/status", require("./routes/status"));
 app.use("/posts", require("./routes/posts"));
 // app.use("/song", require("./routes/songroute"));
-// Static folder for uploaded files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const allowedOrigins = [
-  "http://localhost:3000",          // React frontend (local)
-  "https://snapcopy.netlify.app",   // React frontend (Netlify hosted)
-  "http://10.0.2.2:3000",           // Android emulator (maps to localhost)
-  "http://192.168.1.100:3000"       // Your local network IP (real device)
-];
 
-// ✅ CORS for REST APIs
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+// ✅ Static folders
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/status/files", express.static(path.join(__dirname, "uploads/status")));
+
 // ===================== FILE UPLOAD ROUTE =====================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -50,7 +52,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
-  }
+  },
 });
 const upload = multer({ storage });
 
@@ -63,23 +65,40 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 });
 // ===============================================================
 
+// ✅ Create HTTP server
 const server = http.createServer(app);
-const { Server } = require('socket.io');
-const connectDB = require('./config/db');
 
+// ✅ Socket.IO setup with CORS
+const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"]
-  }
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://snapcopy.netlify.app",
+      "capacitor://localhost",
+      "ionic://localhost",
+      "http://localhost",
+      "https://*",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"], // ✅ ensure cross-platform support
 });
 
-require('./socket/chat')(io);
+// ✅ Socket routes
+require("./socket/chat")(io);
+
+// ✅ MongoDB connection
+const connectDB = require("./config/db");
 connectDB();
 
+// ✅ Example health route
+app.get("/", (req, res) => {
+  res.send("🚀 API is running and Socket.IO is ready!");
+});
 
-
- 
-
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
