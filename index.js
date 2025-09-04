@@ -21,12 +21,16 @@ app.use(
         "http://localhost:3000",         // React local
         "http://127.0.0.1:3000",
         "http://localhost",              // generic localhost
-        "https://snapcopy.netlify.app",  // your Netlify frontend
+        "https://snapcopy.netlify.app",  // Netlify frontend
         "capacitor://localhost",         // Capacitor apps
         "ionic://localhost",             // Ionic apps
       ];
 
-      if (allowedOrigins.includes(origin)) {
+      // ✅ Allow https://localhost and https://localhost:PORT
+      if (
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/localhost(:\d+)?$/.test(origin)
+      ) {
         callback(null, true);
       } else {
         console.log("❌ Blocked by CORS:", origin);
@@ -48,7 +52,6 @@ app.use("/api/users", require("./routes/user"));
 app.use("/api/chat", require("./routes/messages"));
 app.use("/status", require("./routes/status"));
 app.use("/posts", require("./routes/posts"));
-// app.use("/song", require("./routes/songroute"));
 
 // ✅ Static folders
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -57,7 +60,7 @@ app.use("/status/files", express.static(path.join(__dirname, "uploads/status")))
 // ===================== FILE UPLOAD ROUTE =====================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Uploads folder
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -91,7 +94,10 @@ const io = new Server(server, {
         "ionic://localhost",
       ];
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/localhost(:\d+)?$/.test(origin)
+      ) {
         callback(null, true);
       } else {
         console.log("❌ Socket Blocked by CORS:", origin);
